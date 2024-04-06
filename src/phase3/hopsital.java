@@ -9,9 +9,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class hopsital extends Application {
 
@@ -20,8 +18,11 @@ public class hopsital extends Application {
     private Scene loginOrSignUpScene;
     private Scene loginScene;
     private Scene userInfoScene;
+    private Scene patientListScene;
 
     private String currentUserId; // Store the current user's ID
+    private boolean isStaffClicked = false; // Track if the staff button was clicked
+
 
     @Override
     public void start(Stage primaryStage) {
@@ -32,8 +33,14 @@ public class hopsital extends Application {
         Button patientButton = new Button("Patient");
 
         // Set action for patient button
-        patientButton.setOnAction(e -> showLoginOrSignUpScene());
-        staffButton.setOnAction(e -> showLoginOrSignUpScene());
+        patientButton.setOnAction(e -> {
+            isStaffClicked = false; // Reset the isStaffClicked flag
+            showLoginOrSignUpScene();
+        });
+        staffButton.setOnAction(e -> {
+            isStaffClicked = true; // Set the isStaffClicked flag
+            showLoginOrSignUpScene();
+        });
 
         // Layout for user selection
         HBox userSelectionLayout = new HBox(10);
@@ -107,7 +114,7 @@ public class hopsital extends Application {
                 String sex = sexField.getText();
                 String id = generateRandomID();
                 currentUserId = id; // Store the current user's ID
-                String accountInfo = name + "," + id + "," + password + "," + dob + "," + sex;
+                String accountInfo = name + "," + id + "," + password + "," + dob + "," + sex + "," + (isStaffClicked ? "Staff" : "Patient");
                 saveAccountInfo(accountInfo, id); // Save account info to file
                 return "Signed Up";
             }
@@ -173,6 +180,7 @@ public class hopsital extends Application {
         primaryStage.setScene(loginScene);
     }
 
+
     private boolean verifyLogin(String name, String password) {
         File folder = new File(".");
         File[] listOfFiles = folder.listFiles();
@@ -184,9 +192,15 @@ public class hopsital extends Application {
                         String line;
                         while ((line = reader.readLine()) != null) {
                             String[] parts = line.split(",");
-                            if (parts.length == 5 && parts[0].equals(name) && parts[2].equals(password)) {
+                            if (parts.length == 6 && parts[0].equals(name) && parts[2].equals(password)) {
                                 currentUserId = parts[1]; // Set currentUserId upon successful login
-                                showUserInfoScene(currentUserId); // Call method to show user info scene
+                                if (isStaffClicked && parts[5].equals("Staff")) {
+                                    // If the staff button was clicked and the user is staff, show the patient list scene
+                                    showPatientListScene();
+                                } else if (!isStaffClicked && parts[5].equals("Patient")) {
+                                    // If the staff button was not clicked and the user is patient, show the user info scene
+                                    showUserInfoScene(currentUserId);
+                                }
                                 return true;
                             }
                         }
@@ -198,7 +212,7 @@ public class hopsital extends Application {
         }
         return false;
     }
-
+    
     private void showUserInfoScene(String userId) {
         // Read user info from file
         Map<String, String> userInfo = readUserInfo(userId);
@@ -237,7 +251,7 @@ public class hopsital extends Application {
         primaryStage.setTitle("User Information");
         primaryStage.setScene(userInfoScene);
     }
-
+    
     private void showEditInsuranceDialog(String userId) {
         // Create dialog for editing insurance info
         Dialog<String> editInsuranceDialog = new Dialog<>();
@@ -402,8 +416,52 @@ public class hopsital extends Application {
         return pharmacyInfo.toString();
     }
 
+
+    private void showPatientListScene() {
+        // Read all patient IDs from the files
+        List<String> patientIds = getAllPatientIds();
+
+        // Create a ListView to display the patient IDs
+        ListView<String> patientListView = new ListView<>();
+        patientListView.getItems().addAll(patientIds);
+
+        // Create a button to go back to the login scene
+        Button backButton = new Button("Back");
+        backButton.setOnAction(e -> showLoginScene());
+
+        // Layout for the patient list scene
+        VBox patientListLayout = new VBox(10);
+        patientListLayout.setPadding(new Insets(20));
+        patientListLayout.setAlignment(Pos.CENTER);
+        patientListLayout.getChildren().addAll(new Label("List of Patients:"), patientListView, backButton);
+
+        // Create scene for the patient list
+        patientListScene = new Scene(patientListLayout, 400, 300);
+
+        // Set primary stage title and scene
+        primaryStage.setTitle("Patient List");
+        primaryStage.setScene(patientListScene);
+    }
+
+    private List<String> getAllPatientIds() {
+        List<String> patientIds = new ArrayList<>();
+        File folder = new File(".");
+        File[] listOfFiles = folder.listFiles();
+        if (listOfFiles != null) {
+            for (File file : listOfFiles) {
+                if (file.isFile() && file.getName().endsWith(".txt") && !file.getName().endsWith("_insurance.txt")) {
+                    String fileName = file.getName();
+                    // Extract patient ID from the file name
+                    String patientId = fileName.substring(0, fileName.lastIndexOf('.'));
+                    patientIds.add(patientId);
+                }
+            }
+        }
+        return patientIds;
+    }
+
+
     public static void main(String[] args) {
         launch(args);
     }
 }
-
