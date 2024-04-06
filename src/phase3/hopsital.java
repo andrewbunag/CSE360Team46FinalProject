@@ -8,10 +8,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class hopsital extends Application {
@@ -20,6 +19,7 @@ public class hopsital extends Application {
     private Scene userSelectionScene;
     private Scene loginOrSignUpScene;
     private Scene loginScene;
+    private Scene userInfoScene;
 
     private String currentUserId; // Store the current user's ID
 
@@ -33,6 +33,7 @@ public class hopsital extends Application {
 
         // Set action for patient button
         patientButton.setOnAction(e -> showLoginOrSignUpScene());
+        staffButton.setOnAction(e -> showLoginOrSignUpScene());
 
         // Layout for user selection
         HBox userSelectionLayout = new HBox(10);
@@ -77,16 +78,20 @@ public class hopsital extends Application {
         Dialog<String> signUpDialog = new Dialog<>();
         signUpDialog.setTitle("Create Account");
 
-        // Create labels and fields for name and password
+        // Create labels and fields for name, password, DOB, and sex
         Label nameLabel = new Label("Name:");
         Label passwordLabel = new Label("Password:");
+        Label dobLabel = new Label("Date of Birth:");
+        Label sexLabel = new Label("Sex:");
         TextField nameField = new TextField();
         PasswordField passwordField = new PasswordField();
+        TextField dobField = new TextField(); // You can use DatePicker for a more sophisticated date input
+        TextField sexField = new TextField();
 
         // Add labels and fields to dialog layout
         VBox dialogLayout = new VBox(10);
         dialogLayout.setPadding(new Insets(20));
-        dialogLayout.getChildren().addAll(nameLabel, nameField, passwordLabel, passwordField);
+        dialogLayout.getChildren().addAll(nameLabel, nameField, passwordLabel, passwordField, dobLabel, dobField, sexLabel, sexField);
         signUpDialog.getDialogPane().setContent(dialogLayout);
 
         // Add buttons for OK and Cancel
@@ -98,9 +103,11 @@ public class hopsital extends Application {
             if (dialogButton == signUpButtonType) {
                 String name = nameField.getText();
                 String password = passwordField.getText();
+                String dob = dobField.getText();
+                String sex = sexField.getText();
                 String id = generateRandomID();
                 currentUserId = id; // Store the current user's ID
-                String accountInfo = name + "," + id + "," + password;
+                String accountInfo = name + "," + id + "," + password + "," + dob + "," + sex;
                 saveAccountInfo(accountInfo, id); // Save account info to file
                 return "Signed Up";
             }
@@ -167,25 +174,236 @@ public class hopsital extends Application {
     }
 
     private boolean verifyLogin(String name, String password) {
-        // Verify login credentials by reading from file
-        String fileName = currentUserId + ".txt"; // Use the current user's ID for file name
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(fileName));
-            String line = reader.readLine();
-            if (line != null) {
-                String[] parts = line.split(",");
-                if (parts.length == 3 && parts[2].equals(password)) {
-                    return true;
+        File folder = new File(".");
+        File[] listOfFiles = folder.listFiles();
+
+        if (listOfFiles != null) {
+            for (File file : listOfFiles) {
+                if (file.isFile() && file.getName().endsWith(".txt")) {
+                    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            String[] parts = line.split(",");
+                            if (parts.length == 5 && parts[0].equals(name) && parts[2].equals(password)) {
+                                currentUserId = parts[1]; // Set currentUserId upon successful login
+                                showUserInfoScene(currentUserId); // Call method to show user info scene
+                                return true;
+                            }
+                        }
+                    } catch (IOException e) {
+                        System.out.println("Error reading file: " + e.getMessage());
+                    }
                 }
             }
-            reader.close();
+        }
+        return false;
+    }
+
+    private void showUserInfoScene(String userId) {
+        // Read user info from file
+        Map<String, String> userInfo = readUserInfo(userId);
+
+        // Create labels to display user info
+        Label nameLabel = new Label("Name: " + userInfo.get("Name"));
+        Label dobLabel = new Label("Date of Birth: " + userInfo.get("DOB"));
+        Label sexLabel = new Label("Sex: " + userInfo.get("Sex"));
+
+        // Read insurance info from file
+        String insuranceInfo = readInsuranceInfo(userId);
+        Label insuranceLabel = new Label("Insurance Info: " + insuranceInfo);
+
+        // Read pharmacy info from file
+        String pharmacyInfo = readPharmacyInfo(userId);
+        Label pharmacyLabel = new Label("Pharmacy Info: " + pharmacyInfo);
+
+        // Create buttons for editing insurance and pharmacy info
+        Button editInsuranceButton = new Button("Edit Insurance Info");
+        Button editPharmacyButton = new Button("Edit Pharmacy Info");
+
+        // Set actions for the buttons
+        editInsuranceButton.setOnAction(e -> showEditInsuranceDialog(userId));
+        editPharmacyButton.setOnAction(e -> showEditPharmacyDialog(userId));
+
+        // Layout for user info
+        VBox userInfoLayout = new VBox(10);
+        userInfoLayout.setPadding(new Insets(20));
+        userInfoLayout.setAlignment(Pos.CENTER);
+        userInfoLayout.getChildren().addAll(nameLabel, dobLabel, sexLabel, insuranceLabel, pharmacyLabel, editInsuranceButton, editPharmacyButton);
+
+        // Create scene for user info
+        userInfoScene = new Scene(userInfoLayout, 400, 250);
+
+        // Set primary stage title and scene
+        primaryStage.setTitle("User Information");
+        primaryStage.setScene(userInfoScene);
+    }
+
+    private void showEditInsuranceDialog(String userId) {
+        // Create dialog for editing insurance info
+        Dialog<String> editInsuranceDialog = new Dialog<>();
+        editInsuranceDialog.setTitle("Edit Insurance Info");
+
+        // Create labels and fields for insurance info
+        Label companyLabel = new Label("Insurance Company:");
+        Label idLabel = new Label("Insurance ID:");
+        TextField companyField = new TextField();
+        TextField idField = new TextField();
+
+        // Add labels and fields to dialog layout
+        VBox dialogLayout = new VBox(10);
+        dialogLayout.setPadding(new Insets(20));
+        dialogLayout.getChildren().addAll(companyLabel, companyField, idLabel, idField);
+        editInsuranceDialog.getDialogPane().setContent(dialogLayout);
+
+        // Add buttons for OK and Cancel
+        ButtonType editInsuranceButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        editInsuranceDialog.getDialogPane().getButtonTypes().addAll(editInsuranceButtonType, ButtonType.CANCEL);
+
+        // Set action for save button
+        editInsuranceDialog.setResultConverter(dialogButton -> {
+            if (dialogButton == editInsuranceButtonType) {
+                String company = companyField.getText();
+                String id = idField.getText();
+                String insuranceInfo = "Insurance Company: " + company + "\nInsurance ID: " + id;
+                appendInsuranceInfo(insuranceInfo, userId);
+                // Update the insurance label in the user info scene
+                showUserInfoScene(userId);
+                return "Saved";
+            }
+            return null;
+        });
+
+        // Show dialog
+        editInsuranceDialog.showAndWait();
+    }
+
+    private void showEditPharmacyDialog(String userId) {
+        // Create dialog for editing pharmacy info
+        Dialog<String> editPharmacyDialog = new Dialog<>();
+        editPharmacyDialog.setTitle("Edit Pharmacy Info");
+
+        // Create labels and fields for pharmacy info
+        Label nameLabel = new Label("Pharmacy Name:");
+        Label addressLabel = new Label("Pharmacy Address:");
+        TextField nameField = new TextField();
+        TextField addressField = new TextField();
+
+        // Add labels and fields to dialog layout
+        VBox dialogLayout = new VBox(10);
+        dialogLayout.setPadding(new Insets(20));
+        dialogLayout.getChildren().addAll(nameLabel, nameField, addressLabel, addressField);
+        editPharmacyDialog.getDialogPane().setContent(dialogLayout);
+
+        // Add buttons for OK and Cancel
+        ButtonType editPharmacyButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        editPharmacyDialog.getDialogPane().getButtonTypes().addAll(editPharmacyButtonType, ButtonType.CANCEL);
+
+        // Set action for save button
+        editPharmacyDialog.setResultConverter(dialogButton -> {
+            if (dialogButton == editPharmacyButtonType) {
+                String name = nameField.getText();
+                String address = addressField.getText();
+                String pharmacyInfo = "Pharmacy Name: " + name + "\nPharmacy Address: " + address;
+                appendPharmacyInfo(pharmacyInfo, userId);
+                // Update the pharmacy label in the user info scene
+                showUserInfoScene(userId);
+                return "Saved";
+            }
+            return null;
+        });
+
+        // Show dialog
+        editPharmacyDialog.showAndWait();
+    }
+
+    private void appendInsuranceInfo(String insuranceInfo, String userId) {
+        String fileName = userId + ".txt";
+        try (FileWriter writer = new FileWriter(fileName, true)) {
+            writer.append("\n").append(insuranceInfo);
+            System.out.println("Insurance information appended successfully.");
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return false;
+    }
+
+    private void appendPharmacyInfo(String pharmacyInfo, String userId) {
+        String fileName = userId + ".txt";
+        try (FileWriter writer = new FileWriter(fileName, true)) {
+            writer.append("\n").append(pharmacyInfo);
+            System.out.println("Pharmacy information appended successfully.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Map<String, String> readUserInfo(String userId) {
+        Map<String, String> userInfo = new HashMap<>();
+        String fileName = userId + ".txt";
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length == 5) {
+                    userInfo.put("Name", parts[0]);
+                    userInfo.put("DOB", parts[3]);
+                    userInfo.put("Sex", parts[4]);
+                } else if (parts.length == 2 && parts[0].startsWith("Insurance Company:")) {
+                    userInfo.put("Insurance Company", parts[0].substring(18));
+                    userInfo.put("Insurance ID", parts[1].substring(13));
+                } else if (parts.length == 2 && parts[0].startsWith("Pharmacy Address:")) {
+                    userInfo.put("Pharmacy Address", parts[0].substring(18));
+                    userInfo.put("Pharmacy Name", parts[1].substring(15));
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return userInfo;
+    }
+
+
+    private String readInsuranceInfo(String userId) {
+        StringBuilder insuranceInfo = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(userId + ".txt"))) {
+            String line;
+            boolean insuranceSection = false;
+            while ((line = reader.readLine()) != null) {
+                if (insuranceSection) {
+                    insuranceInfo.append(line).append("\n");
+                }
+                if (line.startsWith("Insurance")) {
+                    insuranceSection = true;
+                    insuranceInfo.append(line).append("\n");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return insuranceInfo.toString();
+    }
+
+    private String readPharmacyInfo(String userId) {
+        StringBuilder pharmacyInfo = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(userId + ".txt"))) {
+            String line;
+            boolean pharmacySection = false;
+            while ((line = reader.readLine()) != null) {
+                if (pharmacySection) {
+                    pharmacyInfo.append(line).append("\n");
+                }
+                if (line.startsWith("Pharmacy")) {
+                    pharmacySection = true;
+                    pharmacyInfo.append(line).append("\n");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return pharmacyInfo.toString();
     }
 
     public static void main(String[] args) {
         launch(args);
     }
 }
+
