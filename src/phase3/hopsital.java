@@ -134,6 +134,12 @@ public class hopsital extends Application {
     private void saveAccountInfo(String accountInfo, String id) {
         String fileName = id + ".txt";
         try {
+            // Append "_staff" or "_patient" to the file name based on the user type
+            if (isStaffClicked) {
+                fileName = id + "_staff.txt";
+            } else {
+                fileName = id + "_patient.txt";
+            }
             FileWriter writer = new FileWriter(fileName);
             writer.write(accountInfo);
             writer.close();
@@ -142,6 +148,7 @@ public class hopsital extends Application {
             e.printStackTrace();
         }
     }
+
 
     private void showLoginScene() {
         // Create login layout
@@ -331,7 +338,7 @@ public class hopsital extends Application {
     }
 
     private void appendInsuranceInfo(String insuranceInfo, String userId) {
-        String fileName = userId + ".txt";
+        String fileName = userId + "_patient.txt";
         try (FileWriter writer = new FileWriter(fileName, true)) {
             writer.append("\n").append(insuranceInfo);
             System.out.println("Insurance information appended successfully.");
@@ -341,7 +348,7 @@ public class hopsital extends Application {
     }
 
     private void appendPharmacyInfo(String pharmacyInfo, String userId) {
-        String fileName = userId + ".txt";
+        String fileName = userId + "_patient.txt";
         try (FileWriter writer = new FileWriter(fileName, true)) {
             writer.append("\n").append(pharmacyInfo);
             System.out.println("Pharmacy information appended successfully.");
@@ -352,21 +359,18 @@ public class hopsital extends Application {
 
     private Map<String, String> readUserInfo(String userId) {
         Map<String, String> userInfo = new HashMap<>();
-        String fileName = userId + ".txt";
+        String fileName = userId + "_patient.txt"; // Update the file name to match patient files
         try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length == 5) {
+                if (parts.length == 6) { // Ensure correct number of parts
                     userInfo.put("Name", parts[0]);
+                    // Skip parts[1] as it contains the ID, which we already have
+                    // Skip parts[2] as it contains the password, which we don't need here
                     userInfo.put("DOB", parts[3]);
                     userInfo.put("Sex", parts[4]);
-                } else if (parts.length == 2 && parts[0].startsWith("Insurance Company:")) {
-                    userInfo.put("Insurance Company", parts[0].substring(18));
-                    userInfo.put("Insurance ID", parts[1].substring(13));
-                } else if (parts.length == 2 && parts[0].startsWith("Pharmacy Address:")) {
-                    userInfo.put("Pharmacy Address", parts[0].substring(18));
-                    userInfo.put("Pharmacy Name", parts[1].substring(15));
+                    // parts[5] contains the user type (e.g., "Patient")
                 }
             }
         } catch (IOException e) {
@@ -376,17 +380,17 @@ public class hopsital extends Application {
     }
 
 
+
     private String readInsuranceInfo(String userId) {
         StringBuilder insuranceInfo = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(userId + ".txt"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(userId + "_patient.txt"))) {
             String line;
             boolean insuranceSection = false;
             while ((line = reader.readLine()) != null) {
-                if (insuranceSection) {
-                    insuranceInfo.append(line).append("\n");
-                }
                 if (line.startsWith("Insurance")) {
                     insuranceSection = true;
+                }
+                if (insuranceSection) {
                     insuranceInfo.append(line).append("\n");
                 }
             }
@@ -398,15 +402,14 @@ public class hopsital extends Application {
 
     private String readPharmacyInfo(String userId) {
         StringBuilder pharmacyInfo = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(userId + ".txt"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(userId + "_patient.txt"))) {
             String line;
             boolean pharmacySection = false;
             while ((line = reader.readLine()) != null) {
-                if (pharmacySection) {
-                    pharmacyInfo.append(line).append("\n");
-                }
                 if (line.startsWith("Pharmacy")) {
                     pharmacySection = true;
+                }
+                if (pharmacySection) {
                     pharmacyInfo.append(line).append("\n");
                 }
             }
@@ -415,6 +418,7 @@ public class hopsital extends Application {
         }
         return pharmacyInfo.toString();
     }
+
 
 
     private void showPatientListScene() {
@@ -449,16 +453,17 @@ public class hopsital extends Application {
         File[] listOfFiles = folder.listFiles();
         if (listOfFiles != null) {
             for (File file : listOfFiles) {
-                if (file.isFile() && file.getName().endsWith(".txt") && !file.getName().endsWith("_insurance.txt")) {
+                if (file.isFile() && file.getName().endsWith("_patient.txt")) {
                     String fileName = file.getName();
                     // Extract patient ID from the file name
-                    String patientId = fileName.substring(0, fileName.lastIndexOf('.'));
+                    String patientId = fileName.substring(0, fileName.lastIndexOf('_'));
                     patientIds.add(patientId);
                 }
             }
         }
         return patientIds;
     }
+
 
 
     public static void main(String[] args) {
