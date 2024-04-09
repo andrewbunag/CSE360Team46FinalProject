@@ -1,0 +1,5 @@
+Bob,18260,1234,02/25/2004,Male,Patient
+Insurance Company: AAA
+Insurance ID: 345634
+Pharmacy Name: Walgreens
+Pharmacy Address: west tempe road

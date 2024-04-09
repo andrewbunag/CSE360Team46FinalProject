@@ -1,0 +1,6 @@
+Staff: Hi bob
+Staff: Hi Doctor
+Patient: Hi Doctor
+Staff: How are you feeling
+Staff: asdfasdf
+Patient: hello

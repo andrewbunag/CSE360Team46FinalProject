@@ -31,6 +31,7 @@ public class hopsital extends Application {
         // Create buttons for user selection
         Button staffButton = new Button("Staff");
         Button patientButton = new Button("Patient");
+        
 
         // Set action for patient button
         patientButton.setOnAction(e -> {
@@ -67,8 +68,8 @@ public class hopsital extends Application {
         loginOrSignUpLayout.getChildren().addAll(loginButton, signUpButton);
 
         // Create scenes
-        userSelectionScene = new Scene(userSelectionLayout, 400, 150);
-        loginOrSignUpScene = new Scene(loginOrSignUpLayout, 400, 150);
+        userSelectionScene = new Scene(userSelectionLayout, 500, 500);
+        loginOrSignUpScene = new Scene(loginOrSignUpLayout, 500, 500);
 
         // Set primary stage title and scene
         primaryStage.setTitle("Hospital User Selection");
@@ -183,7 +184,7 @@ public class hopsital extends Application {
         loginLayout.getChildren().add(loginButton);
 
         // Set scene with login layout
-        loginScene = new Scene(loginLayout, 400, 150);
+        loginScene = new Scene(loginLayout, 500, 500);
         primaryStage.setScene(loginScene);
     }
 
@@ -245,19 +246,24 @@ public class hopsital extends Application {
         editInsuranceButton.setOnAction(e -> showEditInsuranceDialog(userId));
         editPharmacyButton.setOnAction(e -> showEditPharmacyDialog(userId));
 
+        // Create button for messaging
+        Button messageButton = new Button("Message Clinic");
+        messageButton.setOnAction(e -> Messages(userId, "Patient"));
+
         // Layout for user info
         VBox userInfoLayout = new VBox(10);
         userInfoLayout.setPadding(new Insets(20));
         userInfoLayout.setAlignment(Pos.CENTER);
-        userInfoLayout.getChildren().addAll(nameLabel, dobLabel, sexLabel, insuranceLabel, pharmacyLabel, editInsuranceButton, editPharmacyButton);
+        userInfoLayout.getChildren().addAll(nameLabel, dobLabel, sexLabel, insuranceLabel, pharmacyLabel, editInsuranceButton, editPharmacyButton, messageButton);
 
         // Create scene for user info
-        userInfoScene = new Scene(userInfoLayout, 400, 250);
+        userInfoScene = new Scene(userInfoLayout, 500, 500);
 
         // Set primary stage title and scene
         primaryStage.setTitle("User Information");
         primaryStage.setScene(userInfoScene);
     }
+
     
     private void showEditInsuranceDialog(String userId) {
         // Create dialog for editing insurance info
@@ -427,6 +433,40 @@ public class hopsital extends Application {
 
         // Create a ListView to display the patient IDs
         ListView<String> patientListView = new ListView<>();
+        patientListView.setCellFactory(param -> new ListCell<String>() {
+            private final Button NewVisitButton = new Button("New Visit");
+            private final Button MessageButton = new Button("Message");
+            private final HBox hbox = new HBox(NewVisitButton, MessageButton);
+
+            {
+                NewVisitButton.setOnAction(event -> {
+                    String patientId = getItem();
+                    NewVisitView(patientId);
+                    // Handle edit action for the specific patient ID
+                    // For example: showEditPatientDialog(patientId);
+                });
+
+                MessageButton.setOnAction(event -> {
+                    String patientId = getItem();
+                    Messages(patientId, "Staff");
+                    // Handle delete action for the specific patient ID
+                    // For example: deletePatient(patientId);
+                });
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    setText(item);
+                    setGraphic(hbox);
+                }
+            }
+        });
+
         patientListView.getItems().addAll(patientIds);
 
         // Create a button to go back to the login scene
@@ -440,12 +480,129 @@ public class hopsital extends Application {
         patientListLayout.getChildren().addAll(new Label("List of Patients:"), patientListView, backButton);
 
         // Create scene for the patient list
-        patientListScene = new Scene(patientListLayout, 400, 300);
+        patientListScene = new Scene(patientListLayout, 500, 500);
 
         // Set primary stage title and scene
         primaryStage.setTitle("Patient List");
         primaryStage.setScene(patientListScene);
     }
+    
+    private void Messages(String patientId, String Sender) {
+        // Create or retrieve the message history file for the patient
+        File messageHistoryFile = getMessageHistoryFile(patientId);
+
+        // Read the message history from the file
+        List<String> messageHistory = readMessageHistory(messageHistoryFile);
+
+        // Create UI components for displaying messages
+        VBox messageHistoryLayout = createMessageHistoryLayout(messageHistory);
+        TextField messageInputField = new TextField();
+        Button sendButton = new Button("Send");
+        sendButton.setOnAction(e -> {
+            // Handle sending of messages
+            String message = messageInputField.getText();
+            if (!message.isEmpty()) {
+                sendMessage(messageHistoryFile, message, Sender);
+                messageHistory.add(Sender+": " + message); // Add the sent message to the history
+                messageHistoryLayout.getChildren().add(new Label(Sender+": " + message)); // Update UI
+                messageInputField.clear(); // Clear the input field after sending
+            }
+        });
+
+        
+        Button backButton = new Button("Back");
+        
+        if(Sender =="Staff") {
+        backButton.setOnAction(e -> {
+            
+            showPatientListScene();
+        });
+        }
+        
+        else {
+        	backButton.setOnAction(e -> {
+                
+        		showUserInfoScene(patientId);
+            });
+        }
+        
+        
+        // Layout for the messages scene
+        VBox messagesLayout = new VBox(10);
+        messagesLayout.setAlignment(Pos.TOP_CENTER);
+        messagesLayout.getChildren().addAll(messageHistoryLayout, messageInputField, sendButton);
+        Scene messagesScene = new Scene(messagesLayout, 500, 500);
+
+        // Show the messages scene
+        Stage messagesStage = new Stage();
+        messagesStage.setScene(messagesScene);
+        messagesStage.setTitle("Messages with Patient " + patientId);
+        messagesStage.show();
+    }
+
+    private File getMessageHistoryFile(String patientId) {
+        // The message history file name can be based on the patient ID
+        return new File(patientId + "_messages.txt");
+    }
+
+    private List<String> readMessageHistory(File messageHistoryFile) {
+        List<String> messageHistory = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(messageHistoryFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                messageHistory.add(line);
+            }
+        } catch (IOException e) {
+            // Handle file not found or other IO errors
+            e.printStackTrace();
+        }
+        return messageHistory;
+    }
+
+    private void sendMessage(File messageHistoryFile, String message, String sender) {
+        try (FileWriter writer = new FileWriter(messageHistoryFile, true)) {
+            writer.write(sender + ": " + message + "\n"); // Append the new message to the file
+        } catch (IOException e) {
+            // Handle IO errors
+            e.printStackTrace();
+        }
+    }
+
+
+    private VBox createMessageHistoryLayout(List<String> messageHistory) {
+        VBox messageHistoryLayout = new VBox(5);
+        messageHistoryLayout.setAlignment(Pos.TOP_LEFT);
+        messageHistoryLayout.setPadding(new Insets(10));
+        for (String message : messageHistory) {
+            messageHistoryLayout.getChildren().add(new Label(message));
+        }
+        return messageHistoryLayout;
+    }
+
+    
+    private void NewVisitView(String ID) {
+        Stage newVisitStage = new Stage();
+        VBox newVisitLayout = new VBox(10);
+        newVisitLayout.setAlignment(Pos.CENTER);
+        newVisitLayout.getChildren().add(new Label("New Visit"));
+
+        // Create back button
+        Button backButton = new Button("Back");
+        backButton.setOnAction(e -> {
+            // Close the current stage (New Visit Page)
+            newVisitStage.close();
+            // Show the user info scene again
+            showPatientListScene();
+        });
+        newVisitLayout.getChildren().add(backButton);
+
+        Scene newVisitScene = new Scene(newVisitLayout, 500, 500);
+        newVisitStage.setScene(newVisitScene);
+        newVisitStage.setTitle("New Visit");
+        newVisitStage.show();
+    }
+
+
 
     private List<String> getAllPatientIds() {
         List<String> patientIds = new ArrayList<>();
