@@ -1,5 +1,0 @@
-Andrew,23597,andrew,9/2/3003,M,Patient
-Insurance Company: flogressive
-Insurance ID: 13
-Pharmacy Name: 1
-Pharmacy Address: 1

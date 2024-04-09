@@ -1,8 +1,0 @@
-Date: dfgsdfg
-Height: sdfgsdfg
-Weight: dsfgsdfg
-Temperature: sdfgsdfg
-Health Concerns: sdfgdsfg
-Health History: sdfgdsfg
-Doctor's Notes: sdfgsdfg
-Medication: sdfgsdf

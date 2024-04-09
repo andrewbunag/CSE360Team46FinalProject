@@ -6,7 +6,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 import java.io.*;
@@ -436,8 +439,9 @@ public class hopsital extends Application {
         ListView<String> patientListView = new ListView<>();
         patientListView.setCellFactory(param -> new ListCell<String>() {
             private final Button NewVisitButton = new Button("New Visit");
+            private final Button VisitsButton = new Button("Visits");
             private final Button MessageButton = new Button("Message");
-            private final HBox hbox = new HBox(NewVisitButton, MessageButton);
+            private final HBox hbox = new HBox(NewVisitButton, VisitsButton, MessageButton);
 
             {
                 NewVisitButton.setOnAction(event -> {
@@ -452,6 +456,13 @@ public class hopsital extends Application {
                     Messages(patientId, "Staff");
                     // Handle delete action for the specific patient ID
                     // For example: deletePatient(patientId);
+                });
+                
+                VisitsButton.setOnAction(event -> {
+                    String patientId = getItem();
+                    VisitPages(patientId);
+                    // Handle visits action for the specific patient ID
+                    // For example: Visits(patientId);
                 });
             }
 
@@ -486,6 +497,100 @@ public class hopsital extends Application {
         // Set primary stage title and scene
         primaryStage.setTitle("Patient List");
         primaryStage.setScene(patientListScene);
+    }
+    
+    private void Visits(String patientId)
+    {
+		//initialize all the window elements
+    	Label topLabel = new Label("xx/xx/xxxx Visit Summary");
+    	Label vitalLabel = new Label("Vitals:");
+    	Label height = new Label("Height: ");
+    	Label weight = new Label("Weight: ");
+    	Label bp = new Label("BP: ");
+    	Label bodyTemp = new Label("Body Temperature: ");
+    	Label healthLabel = new Label("Patient Health Concerns: ");
+    	Label health1 = new Label("Shortness of breath");
+		Label health2 = new Label("Allergies");
+		Label medHist = new Label("Medical History on xx/xx/xxxx:");
+		Label meds = new Label("Medication: ");
+		Label preHealth = new Label("Pre-existing Health Conditions: ");
+		Label imm = new Label("Immunizations: ");
+		Label docNotes = new Label("Doctor's Notes: ");
+		Label notes = new Label("Notes: ");
+		Label prescriptions = new Label("Prescriptions: ");
+		
+		//vbox with vitals information
+		VBox vboxVitals = new VBox(40); //spacing between nodes
+        vboxVitals.setPadding(new Insets(40)); //padding around the layout
+        vboxVitals.getChildren().addAll(vitalLabel,height, weight, bp, bodyTemp);
+        vboxVitals.setAlignment(Pos.TOP_LEFT);
+        vboxVitals.setStyle("-fx-background-color: lightgray;");
+        
+        VBox vboxHealth = new VBox(40);
+        vboxHealth.setPadding(new Insets(40)); //padding around the layout
+        vboxHealth.getChildren().addAll(healthLabel, health1, health2);
+        vboxHealth.setAlignment(Pos.TOP_RIGHT);
+        vboxHealth.setStyle("-fx-background-color: lightgray;");
+        
+        VBox vboxMed = new VBox(40);
+        vboxMed.setPadding(new Insets(40)); //padding around the layout
+        vboxMed.getChildren().addAll(medHist, meds, preHealth, imm);
+        vboxMed.setAlignment(Pos.TOP_CENTER);
+        vboxMed.setStyle("-fx-background-color: lightgray;");
+		        
+		//top row of page
+		HBox hbox1 = new HBox(10);
+        hbox1.getChildren().addAll(topLabel,vboxVitals,vboxHealth,vboxMed);
+        
+
+        //bottom row of page
+        VBox vboxDoc = new VBox(40);
+        vboxDoc.setPadding(new Insets(40)); //padding around the layout
+        vboxDoc.getChildren().addAll(docNotes, notes, prescriptions);
+        vboxDoc.setAlignment(Pos.BOTTOM_LEFT);
+        vboxDoc.setStyle("-fx-background-color: lightblue;");
+        Insets margins = new Insets(20, 20, 20, 20); // Insets(top, right, bottom, left)
+        
+        VBox page = new VBox(40);
+        
+        //add the panels onto the main page
+        page.setMargin(vboxDoc, margins);
+        page.setPadding(new Insets(10, 10, 10, 10));
+        page.getChildren().addAll(topLabel,hbox1,vboxDoc);
+        page.setStyle("-fx-background-color: lavender;");
+        
+        Scene visitsScene = new Scene(page, 500, 500);
+        //Show the visit scene
+        Stage visitsStage = new Stage();
+        visitsStage.setScene(visitsScene);
+        visitsStage.setTitle("Visits with Patient " + patientId);
+        visitsStage.show();
+    }
+    
+    private void VisitPages(String patientId)
+    {
+    	Label labelTop = new Label("Visit Summaries");
+    	labelTop.setTextFill(Color.BLACK);
+        labelTop.setFont(Font.font(null,18));
+    	
+        primaryStage.setTitle("Visit Summaries");
+        
+        //visit summary buttons
+        Button btn = new Button();
+        
+        //TODO access visit summaries and display correct amount of buttons
+        btn.setText("xx/xx/xxxx Visit Summary");
+        btn.setOnAction(event -> {
+            Visits(patientId);
+            // Handle visits action for the specific patient ID
+            // For example: Visits(patientId);
+        });
+        
+        StackPane root = new StackPane();
+        StackPane.setAlignment(labelTop, javafx.geometry.Pos.TOP_CENTER);
+        root.getChildren().addAll(labelTop,btn);
+        primaryStage.setScene(new Scene(root, 300, 250));
+        primaryStage.show();
     }
     
     private void Messages(String patientId, String Sender) {
