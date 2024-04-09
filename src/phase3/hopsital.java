@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -580,11 +581,68 @@ public class hopsital extends Application {
     }
 
     
-    private void NewVisitView(String ID) {
+    private void NewVisitView(String patientId) {
         Stage newVisitStage = new Stage();
-        VBox newVisitLayout = new VBox(10);
+        GridPane newVisitLayout = new GridPane();
         newVisitLayout.setAlignment(Pos.CENTER);
-        newVisitLayout.getChildren().add(new Label("New Visit"));
+        newVisitLayout.setHgap(10);
+        newVisitLayout.setVgap(10);
+        newVisitLayout.setPadding(new Insets(20));
+
+        // Create labels for each field
+        Label dateLabel = new Label("Date:");
+        Label heightLabel = new Label("Height:");
+        Label weightLabel = new Label("Weight:");
+        Label temperatureLabel = new Label("Temperature:");
+        Label healthConcernsLabel = new Label("Health Concerns:");
+        Label healthHistoryLabel = new Label("Health History:");
+        Label doctorsNotesLabel = new Label("Doctor's Notes:");
+        Label medicationLabel = new Label("Medication:");
+
+        // Create text fields for each field
+        TextField dateField = new TextField();
+        TextField heightField = new TextField();
+        TextField weightField = new TextField();
+        TextField temperatureField = new TextField();
+        TextField healthConcernsField = new TextField();
+        TextField healthHistoryField = new TextField();
+        TextField doctorsNotesField = new TextField();
+        TextField medicationField = new TextField();
+
+        // Add labels and text fields to the grid layout
+        newVisitLayout.addColumn(0, dateLabel, heightLabel, weightLabel, temperatureLabel, healthConcernsLabel, healthHistoryLabel, doctorsNotesLabel, medicationLabel);
+        newVisitLayout.addColumn(1, dateField, heightField, weightField, temperatureField, healthConcernsField, healthHistoryField, doctorsNotesField, medicationField);
+
+        // Create save button
+        Button saveButton = new Button("Save");
+        saveButton.setOnAction(e -> {
+            // Get values from text fields
+            String date = dateField.getText();
+            String height = heightField.getText();
+            String weight = weightField.getText();
+            String temperature = temperatureField.getText();
+            String healthConcerns = healthConcernsField.getText();
+            String healthHistory = healthHistoryField.getText();
+            String doctorsNotes = doctorsNotesField.getText();
+            String medication = medicationField.getText();
+
+            // Validate input fields
+            if (date.isEmpty() || height.isEmpty() || weight.isEmpty() || temperature.isEmpty() || healthConcerns.isEmpty() || healthHistory.isEmpty() || doctorsNotes.isEmpty() || medication.isEmpty()) {
+                // Display error message if any field is empty
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("Please fill out all fields.");
+                alert.showAndWait();
+                return;
+            }
+
+            // Save appointment details to a file
+            saveAppointmentDetails(patientId, date, height, weight, temperature, healthConcerns, healthHistory, doctorsNotes, medication);
+
+            // Close the current stage (New Visit Page)
+            newVisitStage.close();
+            // Show the user info scene again
+            showPatientListScene();
+        });
 
         // Create back button
         Button backButton = new Button("Back");
@@ -594,13 +652,61 @@ public class hopsital extends Application {
             // Show the user info scene again
             showPatientListScene();
         });
-        newVisitLayout.getChildren().add(backButton);
+
+        // Add buttons to the grid layout
+        newVisitLayout.add(saveButton, 0, 8);
+        newVisitLayout.add(backButton, 1, 8);
 
         Scene newVisitScene = new Scene(newVisitLayout, 500, 500);
         newVisitStage.setScene(newVisitScene);
         newVisitStage.setTitle("New Visit");
         newVisitStage.show();
     }
+
+
+
+    private void saveAppointmentDetails(String patientId, String date, String height, String weight, String temperature, String healthConcerns, String healthHistory, String doctorsNotes, String medication) {
+        // Create the folder for appointment history if it doesn't exist
+        File folder = new File(patientId + "_Appointment_History");
+        if (!folder.exists()) {
+            folder.mkdir();
+        }
+
+        // Get the number of existing appointment files for the patient
+        File[] existingAppointments = folder.listFiles((dir, name) -> name.startsWith(patientId + "_Appointment"));
+        int appointmentNumber = existingAppointments != null ? existingAppointments.length + 1 : 1;
+
+        // Create the file name using patient ID and the next available appointment number
+        String fileName = patientId + "_Appointment" + appointmentNumber + ".txt";
+        File appointmentFile = new File(folder, fileName);
+
+        try {
+            // Check if the appointment file already exists
+            if (!appointmentFile.exists()) {
+                appointmentFile.createNewFile(); // Create a new file if it doesn't exist
+            }
+
+            // Write appointment details to the file
+            try (PrintWriter writer = new PrintWriter(new FileWriter(appointmentFile))) {
+                writer.println("Date: " + date);
+                writer.println("Height: " + height);
+                writer.println("Weight: " + weight);
+                writer.println("Temperature: " + temperature);
+                writer.println("Health Concerns: " + healthConcerns);
+                writer.println("Health History: " + healthHistory);
+                writer.println("Doctor's Notes: " + doctorsNotes);
+                writer.println("Medication: " + medication);
+                System.out.println("Appointment details saved successfully.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
 
 
 
