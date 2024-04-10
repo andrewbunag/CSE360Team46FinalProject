@@ -460,7 +460,10 @@ public class hopsital extends Application {
                 
                 VisitsButton.setOnAction(event -> {
                     String patientId = getItem();
-                    VisitPages(patientId);
+                    if(numOfAppointments(patientId) > 0)
+                    	VisitPages(patientId);
+                    else
+                    	System.out.println("No Visits");
                     // Handle visits action for the specific patient ID
                     // For example: Visits(patientId);
                 });
@@ -499,42 +502,38 @@ public class hopsital extends Application {
         primaryStage.setScene(patientListScene);
     }
     
-    private void Visits(String patientId)
+    private void Visits(String patientId, int nAppointment)
     {
+    	// Reads appointment info from text file
+        Map<String, String> appointInfo = readVisitInfo(patientId, nAppointment);
 		//initialize all the window elements
-    	Label topLabel = new Label("xx/xx/xxxx Visit Summary");
+    	Label topLabel = new Label(appointInfo.get("Date")+ " Visit Summary");
     	Label vitalLabel = new Label("Vitals:");
-    	Label height = new Label("Height: ");
-    	Label weight = new Label("Weight: ");
-    	Label bp = new Label("BP: ");
-    	Label bodyTemp = new Label("Body Temperature: ");
-    	Label healthLabel = new Label("Patient Health Concerns: ");
-    	Label health1 = new Label("Shortness of breath");
-		Label health2 = new Label("Allergies");
-		Label medHist = new Label("Medical History on xx/xx/xxxx:");
-		Label meds = new Label("Medication: ");
-		Label preHealth = new Label("Pre-existing Health Conditions: ");
-		Label imm = new Label("Immunizations: ");
-		Label docNotes = new Label("Doctor's Notes: ");
-		Label notes = new Label("Notes: ");
-		Label prescriptions = new Label("Prescriptions: ");
+    	Label height = new Label("Height: " + appointInfo.get("Height"));
+    	Label weight = new Label("Height: " + appointInfo.get("Weight"));
+    	Label bodyTemp = new Label("Temperature: " + appointInfo.get("Temperature"));
+    	Label healthLabel = new Label("Health Concerns: " + appointInfo.get("Concerns"));
+		Label medHist = new Label("History: " + appointInfo.get("History"));
+		Label docNotes = new Label("Doctor Notes:");
+		Label notes = new Label("Notes: " + appointInfo.get("Notes"));
+		Label prescriptions = new Label("Prescriptions: " + appointInfo.get("Medication"));
 		
 		//vbox with vitals information
 		VBox vboxVitals = new VBox(40); //spacing between nodes
         vboxVitals.setPadding(new Insets(40)); //padding around the layout
-        vboxVitals.getChildren().addAll(vitalLabel,height, weight, bp, bodyTemp);
+        vboxVitals.getChildren().addAll(vitalLabel,height, weight, bodyTemp);
         vboxVitals.setAlignment(Pos.TOP_LEFT);
         vboxVitals.setStyle("-fx-background-color: lightgray;");
         
         VBox vboxHealth = new VBox(40);
         vboxHealth.setPadding(new Insets(40)); //padding around the layout
-        vboxHealth.getChildren().addAll(healthLabel, health1, health2);
+        vboxHealth.getChildren().addAll(healthLabel);
         vboxHealth.setAlignment(Pos.TOP_RIGHT);
         vboxHealth.setStyle("-fx-background-color: lightgray;");
         
         VBox vboxMed = new VBox(40);
         vboxMed.setPadding(new Insets(40)); //padding around the layout
-        vboxMed.getChildren().addAll(medHist, meds, preHealth, imm);
+        vboxMed.getChildren().addAll(medHist);
         vboxMed.setAlignment(Pos.TOP_CENTER);
         vboxMed.setStyle("-fx-background-color: lightgray;");
 		        
@@ -559,7 +558,7 @@ public class hopsital extends Application {
         page.getChildren().addAll(topLabel,hbox1,vboxDoc);
         page.setStyle("-fx-background-color: lavender;");
         
-        Scene visitsScene = new Scene(page, 500, 500);
+        Scene visitsScene = new Scene(page, 750, 700);
         //Show the visit scene
         Stage visitsStage = new Stage();
         visitsStage.setScene(visitsScene);
@@ -567,30 +566,101 @@ public class hopsital extends Application {
         visitsStage.show();
     }
     
-    private void VisitPages(String patientId)
+	private void VisitPages(String patientId) {
+		int nAppointments = numOfAppointments(patientId);
+
+		Label labelTop = new Label("Visit Summaries");
+		labelTop.setTextFill(Color.BLACK);
+		labelTop.setFont(Font.font(null, 18));
+
+		primaryStage.setTitle("Visit Summaries");
+
+		// visit summary buttons and ComboBox
+		ComboBox comboBox = new ComboBox();
+		// Displays all Appointments with Dates
+		for (int i = nAppointments; i >= 1; i--) {
+			comboBox.getItems().add("Appointment " + i + " Date: " + visitDate(patientId, i));
+		}
+		Button btn = new Button();
+		int n = comboBox.getSelectionModel().getSelectedIndex();
+		// TODO access visit summaries and display correct amount of buttons
+		btn.setText("Confirm Visit Summary");
+		btn.setOnAction(event -> {
+			int selectedBox = comboBox.getSelectionModel().getSelectedIndex();
+			// If nothing is selected than value is -1
+			if (selectedBox > -1) {
+				selectedBox = nAppointments - selectedBox;
+				Visits(patientId, selectedBox);
+			}
+			// Handle visits action for the specific patient ID
+			// For example: Visits(patientId);
+		});
+
+		StackPane root = new StackPane();
+		root.setPadding(new Insets(20, 20, 20, 20));
+		StackPane.setAlignment(labelTop, javafx.geometry.Pos.TOP_CENTER);
+		StackPane.setAlignment(btn, Pos.BOTTOM_CENTER);
+		root.getChildren().addAll(labelTop, comboBox, btn);
+		primaryStage.setScene(new Scene(root, 500, 500));
+		primaryStage.show();
+	}
+    
+	private Map<String, String> readVisitInfo(String patientId, int nAppointment) {
+		Map<String, String> userInfo = new HashMap<>();
+		// Folder of patient
+		File folder = new File(patientId + "_Appointment_History");
+		// Name of text file
+		String fileName = patientId + "_Appointment" + nAppointment + ".txt";
+		// locating file in folder
+		File appointmentFile = new File(folder, fileName);
+		String[] data = new String[8];
+		int i = 0;
+		// read file and lines to extract text
+		try (BufferedReader reader = new BufferedReader(new FileReader(appointmentFile))) {
+			String line;
+			while ((line = reader.readLine()) != null) {
+				line = line.substring(line.lastIndexOf(":") + 2); // plus 2 to take string after : and space
+				data[i] = line;
+				i++;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		// inputs all data into hashmap
+		userInfo.put("Date", data[0]);
+		userInfo.put("Height", data[1]);
+		userInfo.put("Weight", data[2]);
+		userInfo.put("Temperature", data[3]);
+		userInfo.put("Concerns", data[4]);
+		userInfo.put("History", data[5]);
+		userInfo.put("Notes", data[6]);
+		userInfo.put("Medication", data[7]);
+
+		return userInfo;
+	}
+
+	private int numOfAppointments(String patientId) {
+		int n = 0;
+		File folder = new File(patientId + "_Appointment_History");
+		File[] existingAppointments = folder.listFiles((dir, name) -> name.startsWith(patientId + "_Appointment"));
+		if (existingAppointments != null)
+			n = existingAppointments.length;
+		return n;
+	}
+    private String visitDate(String patientId, int nAppointment)
     {
-    	Label labelTop = new Label("Visit Summaries");
-    	labelTop.setTextFill(Color.BLACK);
-        labelTop.setFont(Font.font(null,18));
-    	
-        primaryStage.setTitle("Visit Summaries");
+    	File folder = new File(patientId + "_Appointment_History");
+    	String fileName = patientId + "_Appointment" + nAppointment + ".txt";
+        File appointmentFile = new File(folder, fileName);
+        String line = null;
+        try (BufferedReader reader = new BufferedReader(new FileReader(appointmentFile))) {
+            line = reader.readLine();
+            line = line.substring(line.lastIndexOf(":")+ 2); // plus 2 to take string after : and space
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return line;
         
-        //visit summary buttons
-        Button btn = new Button();
-        
-        //TODO access visit summaries and display correct amount of buttons
-        btn.setText("xx/xx/xxxx Visit Summary");
-        btn.setOnAction(event -> {
-            Visits(patientId);
-            // Handle visits action for the specific patient ID
-            // For example: Visits(patientId);
-        });
-        
-        StackPane root = new StackPane();
-        StackPane.setAlignment(labelTop, javafx.geometry.Pos.TOP_CENTER);
-        root.getChildren().addAll(labelTop,btn);
-        primaryStage.setScene(new Scene(root, 300, 250));
-        primaryStage.show();
     }
     
     private void Messages(String patientId, String Sender) {
@@ -831,7 +901,10 @@ public class hopsital extends Application {
         }
         return patientIds;
     }
-
+    void	errorWindow(String error)
+    {
+    	
+    }
 
 
     public static void main(String[] args) {
