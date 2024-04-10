@@ -1,8 +1,0 @@
-Date: 01/12/2020
-Height: 5'10
-Weight: 159.3
-Temperature: 90
-Health Concerns: Missing L arm
-Health History: none
-Doctor's Notes: none
-Medication: Pain killers 200mg 

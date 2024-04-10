@@ -1,0 +1,5 @@
+Raunak,60310,1234,03/245/2004,Male,Patient
+Insurance Company: Aetna
+Insurance ID: 12341234
+Pharmacy Name: Walgreens
+Pharmacy Address: 123 temp road

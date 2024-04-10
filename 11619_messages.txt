@@ -1,0 +1,4 @@
+Staff: Hello I have an issue
+Patient: What is wrong
+Staff: I need medication
+Patient: Me too bro

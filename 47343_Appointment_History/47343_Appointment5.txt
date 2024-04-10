@@ -1,8 +1,0 @@
-Date: 02/10/2024
-Height: 5'10
-Weight: 160.2
-Temperature: 90
-Health Concerns: none
-Health History: none
-Doctor's Notes: none
-Medication: none
