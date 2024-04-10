@@ -253,12 +253,22 @@ public class hopsital extends Application {
         // Create button for messaging
         Button messageButton = new Button("Message Clinic");
         messageButton.setOnAction(e -> Messages(userId, "Patient"));
-
+        
+        // Creates button for visit history
+        Button visitsButton = new Button("Visit History");
+        visitsButton.setOnAction(event -> {
+            if(numOfAppointments(userId) > 0)
+            	VisitPages(userId);
+            else
+            	System.out.println("No Visits");
+            // Handle visits action for the specific patient ID
+            // For example: Visits(patientId);
+        });
         // Layout for user info
         VBox userInfoLayout = new VBox(10);
         userInfoLayout.setPadding(new Insets(20));
         userInfoLayout.setAlignment(Pos.CENTER);
-        userInfoLayout.getChildren().addAll(nameLabel, dobLabel, sexLabel, insuranceLabel, pharmacyLabel, editInsuranceButton, editPharmacyButton, messageButton);
+        userInfoLayout.getChildren().addAll(nameLabel, dobLabel, sexLabel, insuranceLabel, pharmacyLabel, editInsuranceButton, editPharmacyButton, visitsButton, messageButton);
 
         // Create scene for user info
         userInfoScene = new Scene(userInfoLayout, 500, 500);
@@ -647,6 +657,8 @@ public class hopsital extends Application {
 			n = existingAppointments.length;
 		return n;
 	}
+	
+	
     private String visitDate(String patientId, int nAppointment)
     {
     	File folder = new File(patientId + "_Appointment_History");
@@ -900,10 +912,6 @@ public class hopsital extends Application {
             }
         }
         return patientIds;
-    }
-    void	errorWindow(String error)
-    {
-    	
     }
 
 

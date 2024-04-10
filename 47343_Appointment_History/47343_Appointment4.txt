@@ -1,6 +1,6 @@
 Date: 04/09/2023
-Height: 5
-Weight: 150
+Height: 5'10
+Weight: 155.2
 Temperature: 90
 Health Concerns: none
 Health History: none
